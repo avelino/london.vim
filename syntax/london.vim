@@ -11,6 +11,10 @@ elseif exists("b:current_syntax")
   finish
 endif
 
+if !exists("main_syntax")
+    let main_syntax = 'html'
+endif
+
 syntax case match
 
 " Mark illegal characters
