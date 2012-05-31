@@ -34,7 +34,7 @@ syntax case match
 
 " London template built-in tags and parameters (without filter, macro, is and raw, they
 " have special threatment)
-syn keyword londonStatement containedin=londonVarBlock,londonTagBlock,londonNested contained and if else in not or recursive as import
+syn keyword londonStatement containedin=londonVarBlock,londonTagBlock,londonNested contained and if else in not or recursive as import piece base style_tags body_scripts
 
 syn keyword londonStatement containedin=londonVarBlock,londonTagBlock,londonNested contained is filter skipwhite nextgroup=londonFilter
 syn keyword londonStatement containedin=londonTagBlock contained macro skipwhite nextgroup=londonFunction
