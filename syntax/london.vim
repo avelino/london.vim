@@ -1,78 +1,88 @@
 " Vim syntax file
 " Language:	London template
-" Maintainer:	Thiago Avelino <thiagoavelinoster@gmail.com>
-" Last Change:	2012 May 06
+" Maintainer:	Thiago Avelino
+" Last Change:	2012 May 30
+" Version:      0.2
+
+" .vimrc variable to disable html highlighting
+if !exists('g:london_syntax_html')
+   let g:london_syntax_html=1
+endif
 
 " For version 5.x: Clear all syntax items
 " For version 6.x: Quit when a syntax file was already loaded
-if version < 600
-  syntax clear
-elseif exists("b:current_syntax")
+if !exists("main_syntax")
+  if version < 600
+    syntax clear
+  elseif exists("b:current_syntax")
   finish
 endif
+  let main_syntax = 'london'
+endif
 
-if !exists("main_syntax")
-    let main_syntax = 'html'
+" Pull in the HTML syntax.
+if g:london_syntax_html
+  if version < 600
+    so <sfile>:p:h/html.vim
+  else
+    runtime! syntax/html.vim
+    unlet b:current_syntax
+  endif
 endif
 
 syntax case match
 
-" Mark illegal characters
-syn match londonError "%}\|}}\|#}"
+" London template built-in tags and parameters (without filter, macro, is and raw, they
+" have special threatment)
+syn keyword londonStatement containedin=londonVarBlock,londonTagBlock,londonNested contained and if else in not or recursive as import
 
-" london template built-in tags and parameters
-" 'comment' doesn't appear here because it gets special treatment
-syn keyword londonStatement contained autoescape csrf_token empty
-" FIXME ==, !=, <, >, <=, and >= should be londonStatements:
-" syn keyword londonStatement contained == != < > <= >=
-syn keyword londonStatement contained and as block endblock by cycle debug else elif
-syn keyword londonStatement contained extends filter endfilter firstof for
-syn keyword londonStatement contained endfor if endif ifchanged endifchanged
-syn keyword londonStatement contained ifequal endifequal ifnotequal
-syn keyword londonStatement contained endifnotequal in include load not now or
-syn keyword londonStatement contained parsed regroup reversed spaceless
-syn keyword londonStatement contained endspaceless ssi templatetag openblock
-syn keyword londonStatement contained closeblock openvariable closevariable
-syn keyword londonStatement contained openbrace closebrace opencomment
-syn keyword londonStatement contained closecomment widthratio url with endwith
-syn keyword londonStatement contained get_current_language trans noop blocktrans
-syn keyword londonStatement contained endblocktrans get_available_languages
-syn keyword londonStatement contained get_current_language_bidi plural
+syn keyword londonStatement containedin=londonVarBlock,londonTagBlock,londonNested contained is filter skipwhite nextgroup=londonFilter
+syn keyword londonStatement containedin=londonTagBlock contained macro skipwhite nextgroup=londonFunction
+syn keyword londonStatement containedin=londonTagBlock contained block skipwhite nextgroup=londonBlockName
 
-" london templete built-in filters
-syn keyword londonFilter contained add addslashes capfirst center cut date
-syn keyword londonFilter contained default default_if_none dictsort
-syn keyword londonFilter contained dictsortreversed divisibleby escape escapejs
-syn keyword londonFilter contained filesizeformat first fix_ampersands
-syn keyword londonFilter contained floatformat get_digit join last length length_is
-syn keyword londonFilter contained linebreaks linebreaksbr linenumbers ljust
-syn keyword londonFilter contained lower make_list phone2numeric pluralize
-syn keyword londonFilter contained pprint random removetags rjust slice slugify
-syn keyword londonFilter contained safe safeseq stringformat striptags
-syn keyword londonFilter contained time timesince timeuntil title truncatechars
-syn keyword londonFilter contained truncatewords truncatewords_html unordered_list upper urlencode
-syn keyword londonFilter contained urlize urlizetrunc wordcount wordwrap yesno
+" Variable Names
+syn match londonVariable containedin=londonVarBlock,londonTagBlock,londonNested contained skipwhite /[a-zA-Z_][a-zA-Z0-9_]*/
+syn keyword londonSpecial containedin=londonVarBlock,londonTagBlock,londonNested contained false true none False True None loop super caller varargs kwargs
 
-" Keywords to highlight within comments
-syn keyword londonTodo contained TODO FIXME XXX
+" Filters
+syn match londonOperator "|" containedin=londonVarBlock,londonTagBlock,londonNested contained nextgroup=londonFilter
+syn match londonFilter contained skipwhite /[a-zA-Z_][a-zA-Z0-9_]*/
+syn match londonFunction contained skipwhite /[a-zA-Z_][a-zA-Z0-9_]*/
+syn match londonBlockName contained skipwhite /[a-zA-Z_][a-zA-Z0-9_]*/
 
-" Keywords to highlight within London Themplate
-syn keyword londonThemplate contained base piece container mirroring 
+" London template constants
+syn region londonString containedin=londonVarBlock,londonTagBlock,londonNested contained start=/"/ skip=/\\"/ end=/"/
+syn region londonString containedin=londonVarBlock,londonTagBlock,londonNested contained start=/'/ skip=/\\'/ end=/'/
+syn match londonNumber containedin=londonVarBlock,londonTagBlock,londonNested contained /[0-9]\+\(\.[0-9]\+\)\?/
 
-" london template constants (always surrounded by double quotes)
-syn region londonArgument contained start=/"/ skip=/\\"/ end=/"/
+" Operators
+syn match londonOperator containedin=londonVarBlock,londonTagBlock,londonNested contained /[+\-*\/<>=!,:]/
+syn match londonPunctuation containedin=londonVarBlock,londonTagBlock,londonNested contained /[()\[\]]/
+syn match londonOperator containedin=londonVarBlock,londonTagBlock,londonNested contained /\./ nextgroup=londonAttribute
+syn match londonAttribute contained /[a-zA-Z_][a-zA-Z0-9_]*/
 
-" Mark illegal characters within tag and variables blocks
-syn match londonTagError contained "#}\|{{\|[^%]}}\|[&#]"
-syn match londonVarError contained "#}\|{%\|%}\|[<>!&#%]"
+" London template tag and variable blocks
+syn region londonNested matchgroup=londonOperator start="(" end=")" transparent display containedin=londonVarBlock,londonTagBlock,londonNested contained
+syn region londonNested matchgroup=londonOperator start="\[" end="\]" transparent display containedin=londonVarBlock,londonTagBlock,londonNested contained
+syn region londonNested matchgroup=londonOperator start="{" end="}" transparent display containedin=londonVarBlock,londonTagBlock,londonNested contained
+syn region londonTagBlock matchgroup=londonTagDelim start=/{%-\?/ end=/-\?%}/ skipwhite containedin=ALLBUT,londonTagBlock,londonVarBlock,londonRaw,londonString,londonNested,londonComment
 
-" london template tag and variable blocks
-syn region londonTagBlock start="{%" end="%}" contains=londonStatement,londonThemplate,londonFilter,londonArgument,londonTagError display
-syn region londonVarBlock start="{{" end="}}" contains=londonFilter,londonArgument,londonVarError display
+syn region londonVarBlock matchgroup=londonVarDelim start=/{{-\?/ end=/-\?}}/ containedin=ALLBUT,londonTagBlock,londonVarBlock,londonRaw,londonString,londonNested,londonComment
 
-" london template 'comment' tag and comment block
-syn region londonComment start="{%\s*comment\s*%}" end="{%\s*endcomment\s*%}" contains=londonTodo
-syn region londonComBlock start="{#" end="#}" contains=londonTodo
+" London template 'raw' tag
+syn region londonRaw matchgroup=londonRawDelim start="{%\s*raw\s*%}" end="{%\s*endraw\s*%}" containedin=ALLBUT,londonTagBlock,londonVarBlock,londonString,londonComment
+
+" London comments
+syn region londonComment matchgroup=londonCommentDelim start="{#" end="#}" containedin=ALLBUT,londonTagBlock,londonVarBlock,londonString
+
+" Block start keywords.  A bit tricker.  We only highlight at the start of a
+" tag block and only if the name is not followed by a comma or equals sign
+" which usually means that we have to deal with an assignment.
+syn match londonStatement containedin=londonTagBlock contained skipwhite /\({%-\?\s*\)\@<=\<[a-zA-Z_][a-zA-Z0-9_]*\>\(\s*[,=]\)\@!/
+
+" and context modifiers
+syn match londonStatement containedin=londonTagBlock contained /\<with\(out\)\?\s\+context\>/ skipwhite
+
 
 " Define the default highlighting.
 " For version 5.7 and earlier: only when not done already
@@ -85,19 +95,33 @@ if version >= 508 || !exists("did_london_syn_inits")
     command -nargs=+ HiLink hi def link <args>
   endif
 
+  HiLink londonPunctuation londonOperator
+  HiLink londonAttribute londonVariable
+  HiLink londonFunction londonFilter
+
+  HiLink londonTagDelim londonTagBlock
+  HiLink londonVarDelim londonVarBlock
+  HiLink londonCommentDelim londonComment
+  HiLink londonRawDelim london
+
+  HiLink londonSpecial Special
+  HiLink londonOperator Normal
+  HiLink londonRaw Normal
   HiLink londonTagBlock PreProc
   HiLink londonVarBlock PreProc
   HiLink londonStatement Statement
-  HiLink londonFilter Identifier
-  HiLink londonArgument Constant
-  HiLink londonTagError Error
-  HiLink londonVarError Error
-  HiLink londonError Error
+  HiLink londonFilter Function
+  HiLink londonBlockName Function
+  HiLink londonVariable Identifier
+  HiLink londonString Constant
+  HiLink londonNumber Constant
   HiLink londonComment Comment
-  HiLink londonComBlock Comment
-  HiLink londonTodo Todo
 
   delcommand HiLink
 endif
 
 let b:current_syntax = "london"
+
+if main_syntax == 'london'
+  unlet main_syntax
+endif
